@@ -113,7 +113,6 @@ pub fn solver_part2(input: &[u8]) -> u32 {
                     //     " ".repeat(6 - _length),
                     //     (i+1, i+_length+1)
                     // );
-                    i += 1;
                     break;
                 }
                 i += 1;
@@ -132,7 +131,7 @@ pub fn solver_part2(input: &[u8]) -> u32 {
                 i += 1;
             }
 
-            let result = first * 10 + if last == 0 {first} else {last};
+            let result = first * 10 + last;
             // println!("result: {result}\n");
             result
         })
