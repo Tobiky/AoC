@@ -98,44 +98,42 @@ pub fn solver_part2(input: &[u8]) -> u32 {
         .split(|&x| x == b'\n')
         .enumerate()
         .map(|(_idx, x)| {
-            println!("line {} ({})", _idx + 1, std::str::from_utf8(x).unwrap());
+            // println!("line {} ({})", _idx + 1, std::str::from_utf8(x).unwrap());
             let mut first = 0;
             let mut last = 0;
 
             let mut i = 0;
             while i < x.len() {
-                if let Some((digit, length)) = tree.find(&x[i..]) {
+                if let Some((digit, _length)) = tree.find(&x[i..]) {
                     first = digit;
-                    println!(
-                        "first <- {} '{:}'{}{:?}",
-                        digit,
-                        std::str::from_utf8(&x[i..i + length]).unwrap(),
-                        " ".repeat(6 - length),
-                        (i+1, i+length+1)
-                    );
+                    // println!(
+                    //     "first <- {} '{:}'{}{:?}",
+                    //     digit,
+                    //     std::str::from_utf8(&x[i..i + _length]).unwrap(),
+                    //     " ".repeat(6 - _length),
+                    //     (i+1, i+_length+1)
+                    // );
                     i += 1;
                     break;
                 }
                 i += 1;
             }
             while i < x.len() {
-                if let Some((digit, length)) = tree.find(&x[i..]) {
-                    println!(
-                        "last  <- {} '{}'{}{:?}",
-                        digit,
-                        std::str::from_utf8(&x[i..i + length]).unwrap(),
-                        " ".repeat(6 - length),
-                        (i+1, i+length+1)
-                    );
+                if let Some((digit, _length)) = tree.find(&x[i..]) {
+                    // println!(
+                    //     "last  <- {} '{}'{}{:?}",
+                    //     digit,
+                    //     std::str::from_utf8(&x[i..i + _length]).unwrap(),
+                    //     " ".repeat(6 - _length),
+                    //     (i+1, i+_length+1)
+                    // );
                     last = digit;
-                    i += 1;
-                } else {
-                    i += 1;
                 }
+                i += 1;
             }
 
-            let result = if last == 0 {first} else {first * 10 + last};
-            println!("result: {result}\n");
+            let result = first * 10 + if last == 0 {first} else {last};
+            // println!("result: {result}\n");
             result
         })
         .sum()
