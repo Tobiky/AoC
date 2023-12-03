@@ -1,4 +1,4 @@
-use aoc_runner_derive::aoc_generator;
+use aoc_runner_derive::{aoc_generator, aoc};
 
 
 pub struct Hand {
@@ -31,8 +31,12 @@ pub fn generator(input: &[u8]) -> Vec<(u32, Game)> {
         let mut hand = Hand::new();
         let mut idx = 1;
         while idx < input.len() {
-            let space_idx = input.iter().position(|&c| c == b' ').unwrap();
-            let number = std::str::from_utf8(&input[..space_idx]).unwrap().parse().unwrap();
+            // index of space since idx
+            let space_idx = input[idx..].iter().position(|&c| c == b' ').unwrap();
+
+            // number between idx and idx of space
+            let number = std::str::from_utf8(&input[idx..idx + space_idx]).unwrap().parse().unwrap();
+
             // space and include starting character
             idx += space_idx + 1;
             match input[idx] {
@@ -64,4 +68,12 @@ pub fn generator(input: &[u8]) -> Vec<(u32, Game)> {
         .enumerate()
         .map(|(idx, game)| (idx as u32 + 1, game))
         .collect::<Vec<_>>()
+}
+
+#[aoc(day2, part1)]
+pub fn part1_solver(input: &[(u32, Game)]) -> u32 {
+    input.iter()
+        .filter(|(_, game)| game.attempts.iter().all(|hand| hand.red <= 12 && hand.green <= 13 && hand.blue <= 14))
+        .map(|(id, _)| id)
+        .sum()
 }
