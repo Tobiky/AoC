@@ -26,7 +26,7 @@ impl Game {
 }
 
 #[aoc_generator(day2)]
-pub fn generator(input: &[u8]) -> Vec<(usize, Game)> {
+pub fn generator(input: &[u8]) -> Vec<(u32, Game)> {
     fn parse_hand(input: &[u8]) -> Hand {
         let mut hand = Hand::new();
         let mut idx = 1;
@@ -62,6 +62,6 @@ pub fn generator(input: &[u8]) -> Vec<(usize, Game)> {
         .map(|slice| slice.split(|&char| char == b';').map(parse_hand).collect::<Vec<_>>())
         .map(Game::with_hands)
         .enumerate()
-        .map(|(idx, game)| (idx + 1, game))
+        .map(|(idx, game)| (idx as u32 + 1, game))
         .collect::<Vec<_>>()
 }
