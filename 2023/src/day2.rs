@@ -1,15 +1,24 @@
 use aoc_runner_derive::{aoc_generator, aoc};
 
 
+#[derive(Clone, Copy)]
 pub struct Hand {
-    red: usize,
-    green: usize,
-    blue: usize,
+    red: u32,
+    green: u32,
+    blue: u32,
 }
 
 impl Hand {
     pub fn new() -> Self {
         Hand { red: 0, green: 0, blue: 0 }
+    }
+
+    pub fn max(self, other: Self) -> Self {
+        Self {
+            red: self.red.max(other.red),
+            green: self.green.max(other.green),
+            blue: self.blue.max(other.blue),
+        }
     }
 }
 
