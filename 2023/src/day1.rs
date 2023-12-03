@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-use debug_print::debug_println;
 use aoc_runner_derive::aoc;
 
 #[aoc(day1, part1)]
@@ -197,6 +196,48 @@ mod tests {
             assert!(tree.value.is_some());
 
             assert_eq!(tree.value, Some(6));
+        }
+
+        #[test]
+        fn mix_one_eight() {
+            let tree = PrefixTree::create();
+
+            assert!(matches!(tree.find(b"oneight"), Some((1, _))));
+        }
+
+        #[test]
+        fn mix_nine_eight() {
+            let tree = PrefixTree::create();
+
+            assert!(matches!(tree.find(b"nineight"), Some((9, _))));
+        }
+
+        #[test]
+        fn mix_eight_three() {
+            let tree = PrefixTree::create();
+
+            assert!(matches!(tree.find(b"eighthree"), Some((8, _))));
+        }
+
+        #[test]
+        fn cat_one_eight() {
+            let tree = PrefixTree::create();
+
+            assert!(matches!(tree.find(b"oneeight"), Some((1, _))));
+        }
+
+        #[test]
+        fn cat_nine_eight() {
+            let tree = PrefixTree::create();
+
+            assert!(matches!(tree.find(b"nineeight"), Some((9, _))));
+        }
+
+        #[test]
+        fn cat_eight_three() {
+            let tree = PrefixTree::create();
+
+            assert!(matches!(tree.find(b"eightthree"), Some((8, _))));
         }
     }
 }
