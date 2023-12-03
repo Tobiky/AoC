@@ -86,3 +86,12 @@ pub fn part1_solver(input: &[(u32, Game)]) -> u32 {
         .map(|(id, _)| id)
         .sum()
 }
+
+
+#[aoc(day2, part2)]
+pub fn part2_solver(input: &[(u32, Game)]) -> u32 {
+    input.iter()
+        .map(|(_, game)| game.attempts.iter().copied().fold(Hand::new(), Hand::max))
+        .map(|hand| hand.red * hand.green * hand.blue)
+        .sum()
+}
