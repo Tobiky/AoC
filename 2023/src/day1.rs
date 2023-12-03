@@ -108,9 +108,10 @@ pub fn solver_part2(input: &[u8]) -> u32 {
                 if let Some((digit, length)) = tree.find(&x[i..]) {
                     first = digit;
                     println!(
-                        "first <- {} '{:}'  \t{:?}",
+                        "first <- {} '{:}'{}{:?}",
                         digit,
                         std::str::from_utf8(&x[i..i + length]).unwrap(),
+                        " ".repeat(6 - length),
                         (i+1, i+length+1)
                     );
                     i += 1;
@@ -121,9 +122,10 @@ pub fn solver_part2(input: &[u8]) -> u32 {
             while i < x.len() {
                 if let Some((digit, length)) = tree.find(&x[i..]) {
                     println!(
-                        "last  <- {} '{}'  \t{:?}",
+                        "last  <- {} '{}'{}{:?}",
                         digit,
                         std::str::from_utf8(&x[i..i + length]).unwrap(),
+                        " ".repeat(6 - length),
                         (i+1, i+length+1)
                     );
                     last = digit;
