@@ -20,6 +20,27 @@ pub enum Entry {
 impl Entry {
     pub fn is_symbol(&self) -> bool { matches!(self, Self::Symbol(..)) }
     pub fn is_number(&self) -> bool { matches!(self, Self::Number(..)) }
+    pub fn bounding_box(&self, max_height: usize, max_width: usize) -> (Point, Point) {
+        let left = match self {
+            Entry::Symbol(_, p) | Entry::Number(_, p, _) => p,
+        };
+
+        let right = match self {
+            Entry::Symbol(_, p) | Entry::Number(_, _, p) => p,
+        };
+
+        let upper_left = Point {
+            x: left.x.checked_sub(1).unwrap_or(0),
+            y: left.y.checked_sub(1).unwrap_or(0),
+        };
+
+        let lower_right = Point {
+            x: max_width.min(right.x + 1),
+            y: max_height.min(right.y + 1),
+        };
+
+        (upper_left, lower_right)
+    }
 }
 
 #[aoc_generator(day3)]
