@@ -44,8 +44,11 @@ impl Entry {
 }
 
 #[aoc_generator(day3)]
-pub fn generator(input: &[u8]) -> Vec<Entry> {
-    input.split(|&char| char == b'\n')
+pub fn generator(input: &[u8]) -> (usize, usize, Vec<Entry>) {
+    let width = input.iter().position(|&c| c == b'\n').unwrap();
+    let height = input.iter().filter(|&&c| c == b'\n').count();
+
+    let entries = input.split(|&char| char == b'\n')
         .enumerate()
         .fold(Vec::new(), |mut entries, (line_idx, line)| {
             let mut idx = 0;
@@ -76,5 +79,7 @@ pub fn generator(input: &[u8]) -> Vec<Entry> {
             }
 
             entries
-        })
+        });
+
+    (width, height, entries)
 }
