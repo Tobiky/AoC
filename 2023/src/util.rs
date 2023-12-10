@@ -11,6 +11,10 @@ pub struct Point<T: NumTraits> {
 }
 
 impl<T: NumTraits> Point<T> {
+    pub const fn new(x: T, y: T) -> Self {
+        Self { x, y }
+    }
+
     pub fn dist_manhattan(self, other: Self) -> T {
         (self.x - other.x) + (self.y - other.y) 
     }

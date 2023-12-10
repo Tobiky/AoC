@@ -1,3 +1,5 @@
+use std::fmt::Debug;
+
 use aoc_runner_derive::{aoc_generator, aoc};
 
 type CoordType = u16;
@@ -95,22 +97,22 @@ pub fn generator(input: &[u8]) -> (CoordType, CoordType, Vec<Entry>) {
 
 // I think it is?
 #[derive(Debug, Clone)]
-pub enum BoundingAreaHierarchy {
+pub enum BoundingAreaHierarchy<T> {
     Node {
         // upper left, lower right
         bounding_area: (Point, Point),
-        left: Box<BoundingAreaHierarchy>,
-        right: Box<BoundingAreaHierarchy>,
+        left: Box<BoundingAreaHierarchy<T>>,
+        right: Box<BoundingAreaHierarchy<T>>,
     },
     Leaf {
         // upper left, lower right
         area: (Point, Point),
-        number: ValueType,
+        value: T,
     },
     Empty
 }
 
-fn calc_bounding_area(areas: &[(ValueType, Area)]) -> Option<Area> {
+fn calc_bounding_area<T>(areas: &[(T, Area)]) -> Option<Area> {
     let x0 = areas.iter().map(|(_, (left, _))| left.x).min()?;
     let y0 = areas.iter().map(|(_, (left, _))| left.y).min()?;
     let x1 = areas.iter().map(|(_, (_, right))| right.x).max()?;
@@ -126,8 +128,16 @@ const fn contains_point(area: &Area, Point {x: x0, y: y0}: Point) -> bool {
     x0 <= x2 && y0 <= y2
 }
 
+
+pub const fn intersects_area(area: &Area, (Point {x: x0, y: y0}, Point {x: x1, y: y1}): &Area) -> bool {
+    contains_point(area, Point::new(*x0, *y0)) || 
+    contains_point(area, Point::new(*x1, *y0)) || 
+    contains_point(area, Point::new(*x0, *y1)) || 
+    contains_point(area, Point::new(*x1, *y1))
+}
+
 type Area = (Point, Point);
-impl BoundingAreaHierarchy {
+impl<'b, T: Debug + Clone> BoundingAreaHierarchy<T> {
     pub const fn is_node(&self) -> bool { matches!(self, Self::Node { .. }) }
     pub const fn is_leaf(&self) -> bool { matches!(self, Self::Leaf{ .. }) }
     pub const fn is_empty(&self) -> bool { matches!(self, Self::Empty) }
@@ -141,11 +151,23 @@ impl BoundingAreaHierarchy {
         contains_point(area, point)
     }
 
-    pub fn from_areas(mut areas: Vec<( ValueType, Area)>) -> BoundingAreaHierarchy {
+    pub const fn intersects(&self, (Point {x: x0, y: y0}, Point {x: x1, y: y1}): Area) -> bool {
+        let area = match self {
+            Self::Node { bounding_area: area, .. } | Self::Leaf { area, .. } => area,
+            _ => return false
+        };
+
+        contains_point(area, Point::new(x0, y0)) || 
+        contains_point(area, Point::new(x1, y0)) || 
+        contains_point(area, Point::new(x0, y1)) || 
+        contains_point(area, Point::new(x1, y1))
+    }
+
+    pub fn from_areas(mut areas: Vec<(T, Area)>) -> Self {
         Self::build_bah(&mut areas, 0)
     }
-    fn build_bah(areas: &mut [(ValueType, Area)], dim: usize) -> BoundingAreaHierarchy {
-        fn area_dim_key((_, (_, right)): &(ValueType, Area), dim: usize) -> CoordType {
+    fn build_bah(areas: &mut [(T, Area)], dim: usize) -> Self {
+        fn area_dim_key<T>((_, (_, right)): &(T, Area), dim: usize) -> CoordType {
             if dim & 1 == 0 {
                 right.x
             } else {
@@ -156,8 +178,8 @@ impl BoundingAreaHierarchy {
         if areas.is_empty() {
             Self::Empty
         } else if areas.len() == 1 {
-            let &(number, area) = areas.first().unwrap();
-            Self::Leaf { area, number }
+            let (value, area) = areas.first().unwrap();
+            Self::Leaf { area: *area, value: value.clone() }
         } else {
             let bounding_area = calc_bounding_area(&areas).unwrap();
 
@@ -178,21 +200,35 @@ impl BoundingAreaHierarchy {
         }
     }
 
-    pub fn search_intersections(&self, target: Point) -> Vec<ValueType> {
+    pub fn contains_intersection(&self, target: &Area) -> bool {
+        match self {
+            Self::Node { bounding_area, left, right } if intersects_area(bounding_area, target) => {
+                left.contains_intersection(target) ||
+                right.contains_intersection(target)
+            },
+            Self::Leaf { area, value } if intersects_area(area, &target) => {
+                println!("{area:?} ({value:?}) intersects {target:?}");
+                true
+            }
+            _ => false,
+        }
+    }
+
+    pub fn search_intersections(&self, target: &Area) -> Vec<&T> {
         let mut buffer = Vec::with_capacity(1);
         self.recursive_intersection_search(target, &mut buffer);
         return buffer;
     }
 
-    fn recursive_intersection_search(&self, target: Point, intersections: &mut Vec<ValueType>) {
+    fn recursive_intersection_search(&'b self, target: &Area, intersections: &mut Vec<&'b T>) {
         match self {
-            Self::Node { bounding_area, left, right } if contains_point(bounding_area, target) => {
+            Self::Node { bounding_area, left, right } if intersects_area(bounding_area, target) => {
                 left.recursive_intersection_search(target, intersections);
                 right.recursive_intersection_search(target, intersections);
             },
-            &Self::Leaf { area, number } if contains_point(&area, target) =>  {
-                println!("{area:?} contains {target:?}");
-                intersections.push(number)
+            Self::Leaf { area, value } if intersects_area(&area, target) =>  {
+                println!("{area:?} ({value:?}) contains {target:?}");
+                intersections.push(value)
             }
             _ => (),
         }
@@ -205,21 +241,27 @@ fn expand_area<const E: CoordType>((tl, br): Area, max_height: CoordType, max_wi
     let right = max_width.min(br.x + E);
     let bot = max_height.min(br.y + E);
 
-    (Point::from((left, top)), Point::from((right, bot)))
+    (Point::new(left, top), Point::new(right, bot))
+}
+
+fn expand_point<const E: CoordType>(p: Point, max_height: CoordType, max_width: CoordType) -> Area {
+    expand_area::<E>((p, p), max_height, max_width)
 }
 
 #[aoc(day3, part1)]
 fn solver_part1((width, height, entries): &(CoordType, CoordType, Vec<Entry>)) -> u32 {
     let (numbers, symbols) = entries.iter().copied().partition::<Vec<_>, _>(Entry::is_number);
-    let numbers = numbers.into_iter()
-        .map(Entry::unwrap_number)
-        .map(|(value, p)| (value, expand_area::<1>(p, *height, *width)))
-        .collect::<Vec<_>>();
-    let hiearchy = BoundingAreaHierarchy::from_areas(numbers);
+    let numbers = numbers.into_iter().map(Entry::unwrap_number).collect::<Vec<_>>();
+    let symbols = symbols.into_iter().map(Entry::unwrap_symbol).collect::<Vec<_>>();
 
-    symbols.into_iter()
-        .map(Entry::unwrap_symbol)
-        .map(|(_, p)| hiearchy.search_intersections(p))
-        .flatten()
+    let symbols = symbols
+        .into_iter()
+        .map(|(c, p)| (c as char, expand_point::<1>(p, *height, *width)))
+        .collect::<Vec<_>>();
+    let hiearchy = BoundingAreaHierarchy::from_areas(symbols);
+
+    numbers.into_iter()
+        .filter(|(_, a)| hiearchy.contains_intersection(a))
+        .map(|(val, ..)| val)
         .sum::<u16>() as u32
 }
