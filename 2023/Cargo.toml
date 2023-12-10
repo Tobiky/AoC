@@ -8,4 +8,5 @@ edition = "2021"
 [dependencies]
 aoc-runner = "0.3.0"
 aoc-runner-derive = "0.3.0"
+num-traits = "0.2.17"
 rayon = "1.8.0"

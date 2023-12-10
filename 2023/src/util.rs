@@ -1,23 +1,37 @@
+use std::fmt::{Debug, Display};
+
+use num_traits::{Num, cast, NumCast};
+
+pub trait NumTraits = Num + NumCast + Default + Copy + Display;
+
 #[derive(Clone, Copy, PartialEq, PartialOrd, Eq)]
-pub struct Point {
-    pub x: usize,
-    pub y: usize,
+pub struct Point<T: NumTraits> {
+    pub x: T,
+    pub y: T,
 }
 
-impl Point {
-    pub fn dist_manhattan(self, other: Self) -> usize {
-        self.x.abs_diff(other.x) + self.y.abs_diff(other.y)
+impl<T: NumTraits> Point<T> {
+    pub fn dist_manhattan(self, other: Self) -> T {
+        (self.x - other.x) + (self.y - other.y) 
     }
 
     pub fn dist_euclidean(self, other: Self) -> f64 {
-        let squared = self.x.abs_diff(other.y).pow(2) + self.y.abs_diff(other.y).pow(2);
+        let x = self.x - other.x;
+        let y = self.y - other.y;
+        let squared = x * x + y * y;
 
-        (squared as f64).sqrt()
+        cast::<T, f64>(squared).map(f64::sqrt).unwrap_or(0.0)
     }
 }
 
-impl From<(usize, usize)> for Point {
-    fn from((x, y): (usize, usize)) -> Self {
-        Point {x, y}
+impl<S: NumCast, D: NumTraits> From<(S, S)> for Point<D> {
+    fn from((x, y): (S, S)) -> Self {
+        Point {x: cast::<S, D>(x).unwrap_or_default(), y: cast::<S, D>(y).unwrap_or_default()}
+    }
+}
+
+impl<T: NumTraits> Debug for Point<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "(x: {}, y: {})", self.x, self.y)
     }
 }
