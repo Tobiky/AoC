@@ -57,7 +57,7 @@ impl Entry {
 #[aoc_generator(day3)]
 pub fn generator(input: &[u8]) -> (CoordType, CoordType, Vec<Entry>) {
     let width = input.iter().position(|&c| c == b'\n').unwrap();
-    let height = input.iter().filter(|&&c| c == b'\n').count();
+    let height = input.iter().filter(|&&c| c == b'\n').count() + 1;
 
     let entries = input.split(|&char| char == b'\n')
         .enumerate()
@@ -206,8 +206,7 @@ impl<'b, T: Debug + Clone> BoundingAreaHierarchy<T> {
                 left.contains_intersection(target) ||
                 right.contains_intersection(target)
             },
-            Self::Leaf { area, value } if intersects_area(area, &target) => {
-                println!("{area:?} ({value:?}) intersects {target:?}");
+            Self::Leaf { area, .. } if intersects_area(area, &target) => {
                 true
             }
             _ => false,
@@ -235,6 +234,12 @@ impl<'b, T: Debug + Clone> BoundingAreaHierarchy<T> {
     }
 }
 
+impl<V: Debug + Clone> FromIterator<(V, Area)> for BoundingAreaHierarchy<V> {
+    fn from_iter<T: IntoIterator<Item = (V, Area)>>(iter: T) -> Self {
+        Self::from_areas(iter.into_iter().collect())
+    }
+}
+
 fn expand_area<const E: CoordType>((tl, br): Area, max_height: CoordType, max_width: CoordType) -> Area {
     let left = tl.x.checked_sub(E).unwrap_or(0);
     let top = tl.y.checked_sub(E).unwrap_or(0);
@@ -254,14 +259,35 @@ fn solver_part1((width, height, entries): &(CoordType, CoordType, Vec<Entry>)) -
     let numbers = numbers.into_iter().map(Entry::unwrap_number).collect::<Vec<_>>();
     let symbols = symbols.into_iter().map(Entry::unwrap_symbol).collect::<Vec<_>>();
 
-    let symbols = symbols
-        .into_iter()
-        .map(|(c, p)| (c as char, expand_point::<1>(p, *height, *width)))
-        .collect::<Vec<_>>();
-    let hiearchy = BoundingAreaHierarchy::from_areas(symbols);
+    let hiearchy = symbols
+        .iter()
+        .map(|&(c, p)| (c as char, expand_point::<1>(p, *height, *width)))
+        .collect::<BoundingAreaHierarchy<_>>();
 
-    numbers.into_iter()
+    let found_numbers = numbers.iter()
         .filter(|(_, a)| hiearchy.contains_intersection(a))
-        .map(|(val, ..)| val)
+        .collect::<Vec<_>>();
+
+    let mut masked_output = (0..*height).map(|_| ".".repeat(*width as usize)).collect::<Vec<_>>();
+
+    found_numbers.iter().for_each(|(n, (p, _))| {
+        let y = p.y as usize;
+        let x = p.x as usize;
+        let s = n.to_string();
+        masked_output[y].replace_range(x..x + s.len(), &s);
+    });
+
+    symbols.iter().for_each(|&(c, p)| {
+        let y = p.y as usize;
+        let x = p.x as usize;
+        unsafe {
+            masked_output[y].as_bytes_mut()[x] = c;
+        }
+    });
+
+    masked_output.into_iter().for_each(|l| println!("{}", l));
+
+    found_numbers.into_iter()
+        .map(|(v, ..)| v)
         .sum::<u16>() as u32
 }
